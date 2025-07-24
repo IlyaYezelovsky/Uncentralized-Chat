@@ -6,15 +6,18 @@ public class Server {
     
     int port;
     
-    ArrayList clientOutputStreams;
+    ArrayList<PrintWriter> clientOutputStreams;
     
     class ClientHandler implements Runnable {
         BufferedReader reader;
         Socket sock;
+        String clientIP;
         
         public ClientHandler(Socket clientSocket) {
             try {
                 sock = clientSocket;
+                clientIP = sock.getInetAddress().getHostAddress();
+                System.out.println("Client connected from: " + clientIP);
                 InputStreamReader isReader = new InputStreamReader(sock.getInputStream());
                 reader = new BufferedReader(isReader);
             } catch (IOException e) {
@@ -29,23 +32,20 @@ public class Server {
                     tell(msg);
                 }
             } catch (IOException e) {
-                // 客户端断开连接时的处理
-                System.out.println("A client disconnected");
+                System.out.println("Client disconnected: " + clientIP);
             } finally {
-                // 清理资源
                 try {
                     if (reader != null) reader.close();
                     if (sock != null) sock.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                // 从输出流列表中移除该客户端的输出流
                 synchronized (clientOutputStreams) {
-                    Iterator it = clientOutputStreams.iterator();
+                    Iterator<PrintWriter> it = clientOutputStreams.iterator();
                     while (it.hasNext()) {
                         try {
-                            PrintWriter writer = (PrintWriter) it.next();
-                            if (writer.checkError()) {  // 检查流是否已关闭
+                            PrintWriter writer = it.next();
+                            if (writer.checkError()) {
                                 it.remove();
                             }
                         } catch (Exception e) {
@@ -53,19 +53,20 @@ public class Server {
                         }
                     }
                 }
+                tell("System: A client from " + clientIP + " has left the chat.");
             }
         }
     }
     
     public void tell(String msg) {
         synchronized (clientOutputStreams) {
-            Iterator it = clientOutputStreams.iterator();
+            Iterator<PrintWriter> it = clientOutputStreams.iterator();
             while (it.hasNext()) {
                 try {
-                    PrintWriter writer = (PrintWriter) it.next();
+                    PrintWriter writer = it.next();
                     writer.println(msg);
                     writer.flush();
-                    if (writer.checkError()) {  // 检查流是否已关闭
+                    if (writer.checkError()) {
                         it.remove();
                     }
                 } catch (Exception e) {
@@ -80,7 +81,7 @@ public class Server {
         System.out.println("Input the port you want to use");
         port = sc.nextInt();
         try {
-            clientOutputStreams = new ArrayList();
+            clientOutputStreams = new ArrayList<PrintWriter>();
             ServerSocket serverSock = new ServerSocket(port);
             System.out.println("Successfully started server on port " + port);
             while (true) {
@@ -91,7 +92,8 @@ public class Server {
                 }
                 Thread t = new Thread(new ClientHandler(clientSocket));
                 t.start();
-                System.out.println("Got a connection");
+                String clientIP = clientSocket.getInetAddress().getHostAddress();
+                tell("System: A client from " + clientIP + " has joined the chat.");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,3 +105,4 @@ public class Server {
         s.go();
     }
 }
+
