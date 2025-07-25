@@ -4,6 +4,7 @@ description: 程序漏洞，或者说不按预期运行的状况
 labels:
   - bug
 assignees: IlyaYezelovsky
+projects: IlyaYezelovsku/5
 body:
   - type: checkboxes
     id: checkboxes-0
