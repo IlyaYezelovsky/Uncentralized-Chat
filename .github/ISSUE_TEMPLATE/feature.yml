@@ -2,7 +2,7 @@ name: 功能建议
 title: "[Feat]"
 description: 加入或优化程序功能的提案
 labels:
-  - feat
+  - enhancement
 projects: IlyaYezelovsky/5
 assignees: IlyaYezelovsky
 body:
